@@ -1,6 +1,7 @@
 import numpy as np
 from utils.runLatte import integrate
 from utils.polytopeSampling import sample, chebyshev_center
+from tqdm import tqdm
 
 
 class SimpleWMISolver:
@@ -93,7 +94,14 @@ class SimpleWMISolver:
 
     def computeClauseWeights(self):
         self.clauseWeights = np.array(
-            [self.computeWeightOfClause(clause) for clause in self.clauseList]
+            [
+                self.computeWeightOfClause(clause)
+                for clause in tqdm(
+                    self.clauseList,
+                    desc="Computing clause weights",
+                    unit="clause",
+                )
+            ]
         )
         self.universeDisjointWeightSum = self.clauseWeights.sum()
         self.clauseProbs = (
@@ -164,7 +172,7 @@ class SimpleWMISolver:
         numberSuccesses = 0
         point = None
 
-        for _ in range(T):
+        for _ in tqdm(range(T), desc="WMI Sampling", unit="samples"):
             if point is None:
                 clauseIdx = np.random.choice(
                     self.nbClauses, p=self.clauseProbs

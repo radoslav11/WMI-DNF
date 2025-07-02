@@ -1,4 +1,4 @@
-# DISCLAIMER: Part of the code in this file was reimplemented and 
+# DISCLAIMER: Part of the code in this file was reimplemented and
 # is not what was orignially used in the paper.
 
 import numpy as np
@@ -17,16 +17,17 @@ def hit_and_run(a, b, x, w, eps):
     d /= np.linalg.norm(d)
 
     dist = np.divide(b - a.dot(x[:-1]), a.dot(d[:-1]))
-    closest = dist[dist > 0].min()
+    positive_dist = dist[dist > 0]
+    if len(positive_dist) == 0:
+        # No valid direction, return current point unchanged
+        return x
+    closest = positive_dist.min()
 
-    # Instead of binary searching, we could solve 
-    # the optimization problem.
+    # Binary search for valid step size
     low = 0
     high = closest
-
-    # We can estimate this cnt based on the epsilon we have,
-    # instead of making redundant iterations.
     cnt = 32
+
     for _ in range(cnt):
         mid = (low + high) / 2.0
         curr = mid * d + x
@@ -37,7 +38,6 @@ def hit_and_run(a, b, x, w, eps):
             high = mid
 
     x += d * closest * np.random.uniform()
-
     return x
 
 
@@ -61,7 +61,7 @@ def sample_(a, b, w, x0, eps, delta):
     # delta, but in the journal version, we did an ablation study
     # for various values for the number of hit and run iterations,
     # which showed that even a small number of iterations was enough.
-    c = 32 
+    c = 32
 
     x0 = np.append(x0, np.array([np.random.uniform(w.eval(x0))]))
     for _ in range(c):
@@ -85,7 +85,7 @@ def sample(a, b, w, x0, eps, delta, reals_universe):
         if np.any(a[: m - 2 * n, i]) or w.has_nonzero_coefficient(i):
             important.append(i)
 
-    important = np.array(important)
+    important = np.array(important, dtype=int)
 
     new_wf = w.filter_vars(important)
     new_x0 = np.array(x0)[important]

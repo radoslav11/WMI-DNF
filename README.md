@@ -6,13 +6,18 @@ This repository contains a simplistic implementation of the Weighted Model Integ
 
 Part of the algorithm is that we should initially find the "volumes" of the polytopes independently. For this will need to install [Latte](https://www.math.ucdavis.edu/~latte/) into the latte-distro folder (top level). Please refer to the driver (implemented in `utils/runLatte.py`) for more details on how we implement the interaction with Latte, and in particular what we pass to it.
 
-## Note before using: try Numba!
-
-(!) This was implemented in 2019, and since then there have been various improvements in [numba](https://numba.pydata.org/), so you might want to try wrapping some of the functions. In particular the sampling code should have a significant speedup if it's made to use numba. 
+The implementation also requires `tqdm` for progress bars:
+```bash
+pip install tqdm
+```
 
 ## Setting up an experiment
 
 You should refer to `main.py` for setting up an experiment. We run Latte by giving a weighted function in the form of a list of monomials. Refer to `utils/weightFunction.py` for the exact details. 
+
+## Examples
+
+You can find examples in the `examples` folder. It contains a dedicated README file with more details.
 
 ## Additional parameters
 

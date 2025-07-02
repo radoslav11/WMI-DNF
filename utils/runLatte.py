@@ -81,13 +81,13 @@ def integrate(lraAtoms, weightFunction, nbBools, universeReals):
     else:
         latte_ret = 1
 
-    manual_integration = np.float128(weightFunction[0][0])
+    manual_integration = np.longdouble(weightFunction[0][0])
     for i in range(nbReals):
         if appearing[i + 1]:
             continue
-        p = np.float128(weightFunction[0][1][i] + 1)
+        p = np.longdouble(weightFunction[0][1][i] + 1)
         manual_integration *= (
-            np.float128(
+            np.longdouble(
                 (
                     (universeReals.upperBound**p)
                     - (universeReals.lowerBound**p)
