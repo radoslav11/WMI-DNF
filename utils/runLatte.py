@@ -14,6 +14,16 @@ def integrate(lraAtoms, weightFunction, nbBools, universeReals):
     with open("temp/polytope" + random_hash + ".hrep.latte", "w") as f:
         lines = []
         for _, atom in enumerate(lraAtoms):
+            # Handle constraint conversion (same logic as in SimpleWMISolver)
+            sign = atom[-1][0][0]
+            if sign == ">":
+                atom = [(x, -y) for x, y in atom]
+            elif sign == "<":
+                # For <= constraints, negate variable coefficients to convert to >= form
+                atom = [(x, -y) for x, y in atom[:-1]] + [
+                    (atom[-1][0], atom[-1][1])
+                ]
+
             vec = [0] * (nbReals + 1)
             vec[0] = atom[-1][1]
             for i, v in atom[:-1]:
@@ -66,7 +76,18 @@ def integrate(lraAtoms, weightFunction, nbBools, universeReals):
             + "\n"
         )
 
-    if appearing.sum() > 1:
+    # Check if we have complex multi-variable constraints
+    # Single-variable constraints like x <= 2 should be handled analytically
+    has_complex_constraints = False
+    for line in lines:
+        var_count = sum(
+            1 for i, x in enumerate(line.split()) if i > 0 and x != "0"
+        )
+        if var_count > 1:
+            has_complex_constraints = True
+            break
+
+    if appearing.sum() > 1 and has_complex_constraints:
         sub_command = [
             "../latte-distro/dest/bin/integrate",
             "polytope" + random_hash + ".hrep.latte",
@@ -82,19 +103,65 @@ def integrate(lraAtoms, weightFunction, nbBools, universeReals):
         latte_ret = 1
 
     manual_integration = np.longdouble(weightFunction[0][0])
-    for i in range(nbReals):
-        if appearing[i + 1]:
-            continue
-        p = np.longdouble(weightFunction[0][1][i] + 1)
-        manual_integration *= (
-            np.longdouble(
-                (
-                    (universeReals.upperBound**p)
-                    - (universeReals.lowerBound**p)
+
+    if appearing.sum() > 1 and not has_complex_constraints:
+        # We have simple single-variable constraints, tighten bounds accordingly
+        for i in range(nbReals):
+            if appearing[i + 1]:
+                # Variable appears in constraints, compute tightened bounds
+                lower_bound = universeReals.lowerBound
+                upper_bound = universeReals.upperBound
+
+                # Apply constraints to tighten bounds
+                for line in lines:
+                    coeffs = [float(x) for x in line.split()]
+                    if len(coeffs) > i + 1 and coeffs[i + 1] != 0:
+                        const = coeffs[0]
+                        coeff = coeffs[i + 1]
+                        # Constraint is: const + coeff*var >= 0, so var >= -const/coeff
+                        if coeff > 0:
+                            bound = -const / coeff
+                            lower_bound = max(lower_bound, bound)
+                        else:
+                            bound = -const / coeff
+                            upper_bound = min(upper_bound, bound)
+
+                # Use tightened bounds for integration
+                p = np.longdouble(weightFunction[0][1][i] + 1)
+                if upper_bound > lower_bound:
+                    manual_integration *= (
+                        np.longdouble(upper_bound**p - lower_bound**p) / p
+                    )
+                else:
+                    manual_integration = 0  # Infeasible constraint
+                    break
+            else:
+                # Variable doesn't appear in constraints, use universe bounds
+                p = np.longdouble(weightFunction[0][1][i] + 1)
+                manual_integration *= (
+                    np.longdouble(
+                        (
+                            (universeReals.upperBound**p)
+                            - (universeReals.lowerBound**p)
+                        )
+                    )
+                    / p
                 )
+    else:
+        # Original behavior: only integrate free variables (those not in constraints)
+        for i in range(nbReals):
+            if appearing[i + 1]:
+                continue
+            p = np.longdouble(weightFunction[0][1][i] + 1)
+            manual_integration *= (
+                np.longdouble(
+                    (
+                        (universeReals.upperBound**p)
+                        - (universeReals.lowerBound**p)
+                    )
+                )
+                / p
             )
-            / p
-        )
 
     print("Computed volume: " + str(latte_ret * manual_integration))
 

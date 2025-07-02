@@ -3,11 +3,11 @@
 Example with a single real variable and linear weight function.
 
 This example demonstrates:
-- Single real variable x in [0, 2]
+- Single real variable x with universe [0, 10] and constraint x <= 2
 - Linear weight function: x (i.e., 1*x^1)
 - Expected result should be close to ∫[0,2] x dx = 2
 
-The weight function is x, so we're computing the weighted integral of x over [0,2].
+The weight function is x, so we're computing the weighted integral of x over the constraint region x <= 2.
 """
 
 import sys
@@ -29,11 +29,12 @@ def main():
     cntReals = 1  # Single real variable
     cntBools = 0  # No boolean variables
 
-    # Create universe: single real variable in [0, 2]
-    uni = RealsUniverse(cntReals, lowerBound=0, upperBound=2)
+    # Create universe: single real variable in [0, 10] (slack bounds)
+    uni = RealsUniverse(cntReals, lowerBound=0, upperBound=10)
 
-    # DNF formula: always true (empty clause)
-    expr = [[]]
+    # DNF formula: x <= 2 (this constraint creates a proper clause)
+    # Real variables are indexed starting from cntBools (0 in this case)
+    expr = [[[(0, 1), ("<=", 2)]]]  # x <= 2
 
     # Weight function: x (represented as 1*x^1)
     # Monomials format: [coefficient, [powers for each variable]]
@@ -46,9 +47,9 @@ def main():
     delta = 0.15
 
     print("=== Linear Weight Function Example ===")
-    print(f"Real variables: {cntReals} (x ∈ [0, 2])")
+    print(f"Real variables: {cntReals} (x ∈ [0, 10])")
     print(f"Boolean variables: {cntBools}")
-    print(f"DNF formula: always true")
+    print(f"DNF formula: x ≤ 2")
     print(f"Weight function: x")
     print(f"Expected result: ∫[0,2] x dx = 2.0")
     print(f"Parameters: eps={eps}, delta={delta}")

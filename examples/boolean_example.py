@@ -35,7 +35,8 @@ def main():
     # Simplified DNF formula: just boolean clauses without real constraints
     # This avoids the need for LattE integration
     # DNF formula: b OR NOT b (always true)
-    expr = [[0], [cntBools]]  # b = true  # b = false (NOT b)
+    # Negated booleans start at index nbBools + nbReals
+    expr = [[0], [cntBools + cntReals]]  # b = true  # b = false (NOT b)
 
     # Weight function: constant 1
     monomials = [[1, [0]]]  # 1 * x^0 = 1

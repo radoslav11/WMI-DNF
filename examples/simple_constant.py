@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Simple example with a single real variable x in [0, 2] and constant weight function.
+Simple example with a single real variable x in [0, 10] and constant weight function.
 
 This example demonstrates the basic usage of the WMI solver with:
-- Single real variable x constrained to 0 <= x <= 2
-- DNF formula: just x (always true since x is constrained)
+- Single real variable x with universe [0, 10] and constraint x <= 2
+- DNF formula: x <= 2
 - Constant weight function: 1 (i.e., 1*x^0)
 
-Expected result should be close to 2 (the volume of the interval [0,2]).
+Expected result should be close to 2 (the volume of the constraint region x <= 2).
 """
 
 import sys
@@ -29,13 +29,12 @@ def main():
     cntReals = 1  # Single real variable
     cntBools = 0  # No boolean variables
 
-    # Create universe: single real variable in [0, 2]
-    uni = RealsUniverse(cntReals, lowerBound=0, upperBound=2)
+    # Create universe: single real variable in [0, 10] (slack bounds)
+    uni = RealsUniverse(cntReals, lowerBound=0, upperBound=10)
 
-    # DNF formula: Since we only have one real variable and it's always within bounds,
-    # we create a trivial DNF that's always satisfiable
-    # Empty clause list means always true
-    expr = [[]]  # Single empty clause = always true
+    # DNF formula: x <= 2 (this constraint creates a proper clause)
+    # Real variables are indexed starting from cntBools (0 in this case)
+    expr = [[[(0, 1), ("<=", 2)]]]  # x <= 2
 
     # Weight function: constant 1 (represented as 1*x^0)
     # Monomials format: [coefficient, [powers for each variable]]
@@ -49,11 +48,11 @@ def main():
     delta = 0.15  # Confidence parameter
 
     print("=== Simple Constant Weight Example ===")
-    print(f"Real variables: {cntReals} (x ∈ [0, 2])")
+    print(f"Real variables: {cntReals} (x ∈ [0, 10])")
     print(f"Boolean variables: {cntBools}")
-    print(f"DNF formula: always true")
+    print(f"DNF formula: x ≤ 2")
     print(f"Weight function: 1 (constant)")
-    print(f"Expected result: ≈ 2.0")
+    print(f"Expected result: ≈ 2.0 (volume of x ≤ 2 region)")
     print(f"Parameters: eps={eps}, delta={delta}")
     print()
 

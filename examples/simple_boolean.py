@@ -25,10 +25,10 @@ def main():
     np.random.seed(42)
 
     # Problem setup
-    cntReals = 0  # No real variables
+    cntReals = 1  # Need one dummy real variable for the solver to work
     cntBools = 2  # Two boolean variables
 
-    # Create empty universe (no real variables)
+    # Create minimal universe with dummy real variable
     uni = RealsUniverse(cntReals, lowerBound=0, upperBound=1)
 
     # DNF formula: a OR b
@@ -39,8 +39,8 @@ def main():
     ]
 
     # Weight function: constant 1
-    # Since there are no real variables, the monomial is just the constant
-    monomials = [[1, []]]  # 1 (constant, no real variables)
+    # With dummy real variable, use constant monomial
+    monomials = [[1, [0]]]  # 1 * x^0 = 1 (constant)
 
     # Boolean weights: P(a=true) = 0.6, P(b=true) = 0.8
     bool_weights = np.array([0.6, 0.8])
@@ -52,7 +52,7 @@ def main():
     delta = 0.15
 
     print("=== Simple Boolean Variables Example ===")
-    print(f"Real variables: {cntReals}")
+    print(f"Real variables: {cntReals} (x ∈ [0, 1], dummy variable)")
     print(f"Boolean variables: {cntBools} (a, b)")
     print(f"Boolean weights: P(a=true) = 0.6, P(b=true) = 0.8")
     print(f"DNF formula: a ∨ b")

@@ -11,6 +11,7 @@ cd examples/
 python simple_constant.py
 python linear_weight.py
 python two_variables.py
+python simple_boolean.py
 python boolean_real_simple.py
 python complex_boolean.py
 python advanced_latte.py        # Requires LattE installation
@@ -25,20 +26,20 @@ python examples/simple_constant.py
 ## Example Descriptions
 
 ### `simple_constant.py`
-- **Variables**: Single real variable x ∈ [0, 2]
-- **DNF Formula**: Always true (empty clause)
+- **Variables**: Single real variable x ∈ [0, 10]
+- **DNF Formula**: x ≤ 2
 - **Weight Function**: Constant 1
-- **Expected Result**: ≈ 2.0 (volume of interval [0,2])
+- **Expected Result**: ≈ 2.0 (volume of constraint region)
 
-This is the basic example requested, demonstrating the fundamental setup.
+Demonstrates basic WMI with simple single-variable constraint that doesn't require LattE.
 
 ### `linear_weight.py`
-- **Variables**: Single real variable x ∈ [0, 2]
-- **DNF Formula**: Always true
+- **Variables**: Single real variable x ∈ [0, 10]
+- **DNF Formula**: x ≤ 2
 - **Weight Function**: x (linear)
 - **Expected Result**: ≈ 2.0 (∫[0,2] x dx = 2)
 
-Shows how to define polynomial weight functions.
+Shows polynomial weight functions with simple single-variable constraints.
 
 ### `two_variables.py`
 - **Variables**: Two real variables x, y ∈ [0, 1]
@@ -47,6 +48,15 @@ Shows how to define polynomial weight functions.
 - **Expected Result**: Integration over constrained region
 
 Demonstrates multi-variable real constraints and polynomial weights.
+
+### `simple_boolean.py`
+- **Variables**: Two booleans a, b + one dummy real x ∈ [0, 1]
+- **DNF Formula**: a ∨ b
+- **Weight Function**: Constant 1
+- **Boolean Weights**: P(a=true) = 0.6, P(b=true) = 0.8
+- **Expected Result**: 0.92
+
+Shows boolean disjunction with different boolean probabilities using inclusion-exclusion principle.
 
 ### `boolean_real_simple.py`
 - **Variables**: One boolean b, one real x ∈ [0, 1]

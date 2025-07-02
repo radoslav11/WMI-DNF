@@ -30,6 +30,12 @@ class SimpleWMISolver:
 
                 if sign == ">":
                     atom = [(x, -y) for x, y in atom]
+                elif sign == "<":
+                    # For <= constraints, negate variable coefficients to convert to >= form
+                    # x <= 2 becomes -x >= -2, or 2 - x >= 0
+                    atom = [(x, -y) for x, y in atom[:-1]] + [
+                        (atom[-1][0], atom[-1][1])
+                    ]
 
                 vec = [0] * (1 + self.nbReals)
                 vec[0] = atom[-1][1]
