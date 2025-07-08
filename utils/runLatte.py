@@ -88,17 +88,23 @@ def integrate(lraAtoms, weightFunction, nbBools, universeReals):
             break
 
     if appearing.sum() > 1 and has_complex_constraints:
+        polytope_path = os.path.abspath("temp/polytope" + random_hash + ".hrep.latte")
+        monomial_path = os.path.abspath("temp/monomial" + random_hash + ".txt")
         sub_command = [
-            "../latte-distro/dest/bin/integrate",
-            "polytope" + random_hash + ".hrep.latte",
+            os.path.abspath("../latte-distro/dest/bin/integrate"),
+            polytope_path,
             "--cone-decompose",
-            "--monomials=monomial" + random_hash + ".txt",
+            "--monomials=" + monomial_path,
             "--valuation=integrate",
         ]
-        command_ret = subprocess.check_output(
+        try:
+            command_ret = subprocess.check_output(
             sub_command, stderr=open(os.devnull, "w"), cwd="temp"
-        ).split()
-        latte_ret = abs(float(command_ret[1 + command_ret.index(b"Decimal:")]))
+            ).split()
+            latte_ret = abs(float(command_ret[1 + command_ret.index(b"Decimal:")]))
+        except subprocess.CalledProcessError:
+            print("LattE integration failed, assume empty volume.")
+            latte_ret = 0
     else:
         latte_ret = 1
 
