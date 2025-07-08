@@ -21,14 +21,29 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from SimpleWMISolver import SimpleWMISolver
-from utils.realsUniverse import RealsUniverse
-from utils.weightFunction import WeightFunction
+from simple_wmi_solver import SimpleWMISolver
+from utils.reals_universe import RealsUniverse
+from utils.weight_function import WeightFunction
 import numpy as np
 import time
 
 
-def main():
+def run_example(eps=0.05, delta=0.05, verbose=False):
+    """
+    Run the complex boolean variables example.
+
+    Args:
+        eps: Approximation parameter (default: 0.05)
+        delta: Confidence parameter (default: 0.05)
+        verbose: Whether to print progress information (default: False)
+
+    Returns:
+        dict: Results containing:
+            - result: The computed WMI result
+            - expected: The expected result (0.5)
+            - execution_time: Time taken to run the example
+            - error: Absolute error from expected result
+    """
     np.random.seed(42)
 
     # Problem setup
@@ -54,28 +69,26 @@ def main():
 
     poly_wf = WeightFunction(monomials, bool_weights)
 
-    # Algorithm parameters
-    eps = 0.05  # Changed from 0.01 as requested
-    delta = 0.05
-
-    print("=== Complex Boolean Example ===")
-    print(f"Real variables: {cntReals} (x ∈ [0, 1], dummy variable)")
-    print(f"Boolean variables: {cntBools} (a, b, c)")
-    print(f"Boolean weights: P(a=true) = P(b=true) = P(c=true) = 0.5")
-    print(f"DNF formula: (a ∧ b) ∨ (a ∧ c) ∨ (b ∧ c)")
-    print(f"Weight function: 1 (constant)")
-    print(f"Expected result: 4/8 = 0.5")
-    print(
-        f"Enumeration: Out of 8 boolean combinations, 4 satisfy the formula:"
-    )
-    print(
-        f"           (0,1,1), (1,0,1), (1,1,0), (1,1,1) each with"
-        f" probability 1/8"
-    )
-    print(f"           Total: 4 × (1/8) = 1/2 = 0.5")
-    print(f"Parameters: eps={eps}, delta={delta}")
-    print("Note: Lower eps value for higher accuracy (longer computation)")
-    print()
+    if verbose:
+        print("=== Complex Boolean Example ===")
+        print(f"Real variables: {cntReals} (x ∈ [0, 1], dummy variable)")
+        print(f"Boolean variables: {cntBools} (a, b, c)")
+        print(f"Boolean weights: P(a=true) = P(b=true) = P(c=true) = 0.5")
+        print(f"DNF formula: (a ∧ b) ∨ (a ∧ c) ∨ (b ∧ c)")
+        print(f"Weight function: 1 (constant)")
+        print(f"Expected result: 4/8 = 0.5")
+        print(
+            f"Enumeration: Out of 8 boolean combinations, 4 satisfy the"
+            f" formula:"
+        )
+        print(
+            f"           (0,1,1), (1,0,1), (1,1,0), (1,1,1) each with"
+            f" probability 1/8"
+        )
+        print(f"           Total: 4 × (1/8) = 1/2 = 0.5")
+        print(f"Parameters: eps={eps}, delta={delta}")
+        print("Note: Lower eps value for higher accuracy (longer computation)")
+        print()
 
     timestamp_start = time.time()
 
@@ -87,10 +100,25 @@ def main():
     execution_time = timestamp_end - timestamp_start
 
     expected = 4.0 / 8.0  # = 0.5
-    print(f"Result: {result:.6f}")
-    print(f"Expected: {expected:.6f}")
-    print(f"Execution time: {execution_time:.2f} seconds")
-    print(f"Error from expected: {abs(result - expected):.6f}")
+    error = abs(result - expected)
+
+    if verbose:
+        print(f"Result: {result:.6f}")
+        print(f"Expected: {expected:.6f}")
+        print(f"Execution time: {execution_time:.2f} seconds")
+        print(f"Error from expected: {error:.6f}")
+
+    return {
+        "result": result,
+        "expected": expected,
+        "execution_time": execution_time,
+        "error": error,
+    }
+
+
+def main():
+    """Command-line interface for the example."""
+    run_example(verbose=True)
 
 
 if __name__ == "__main__":

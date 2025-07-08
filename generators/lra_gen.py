@@ -1,5 +1,5 @@
 import numpy as np
-from generators.DNFGen import generateDNF
+from generators.dnf_gen import generateDNF
 
 
 def generateAtomLRA(mainVar, nbBools, avgLen, universeReals, x):

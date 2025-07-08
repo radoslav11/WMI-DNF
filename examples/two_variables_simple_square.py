@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
 """
-Advanced example requiring LattE integration.
+Simple square integration example.
 
 This example demonstrates:
-- Two real variables x, y in [0, 3]
-- Complex DNF formula with multiple polytopic constraints:
-  (x + 2y ≤ 4 ∧ x - y ≥ 0) ∨ (2x + y ≤ 5 ∧ x + y ≥ 2)
-- Polynomial weight function: x² + y² + xy + 1
-- This requires LattE for computing volumes of complex polytopes
-
-WARNING: This example requires LattE to be installed in latte-distro/ folder.
-If LattE is not available, this will fail with FileNotFoundError.
+- Two real variables x, y in [0, 30]
+- DNF formula defining a square region: x ≥ 10 ∧ x ≤ 30 ∧ y ≥ 10 ∧ y ≤ 30
+- Weight function: constant 1
+- Expected result: (30-10) * (30-10) = 400
 """
 
 import sys
@@ -27,7 +23,7 @@ import time
 
 def run_example(eps=0.2, delta=0.1, verbose=False):
     """
-    Run the advanced LattE integration example.
+    Run the simple square integration example.
 
     Args:
         eps: Approximation parameter (default: 0.2)
@@ -37,10 +33,10 @@ def run_example(eps=0.2, delta=0.1, verbose=False):
     Returns:
         dict: Results containing:
             - result: The computed WMI result (or None if LattE unavailable)
-            - expected: None (complex integration, no simple expected value)
+            - expected: The expected result (400.0)
             - execution_time: Time taken to run the example
-            - error: None (no expected value to compare against)
-            - success: Boolean indicating if LattE integration succeeded
+            - error: Absolute error from expected result (or None if failed)
+            - success: Boolean indicating if integration succeeded
     """
     np.random.seed(42)
 
@@ -48,50 +44,31 @@ def run_example(eps=0.2, delta=0.1, verbose=False):
     cntReals = 2  # Two real variables
     cntBools = 0  # No boolean variables
 
-    # Create universe: two real variables in [0, 3]
-    uni = RealsUniverse(cntReals, lowerBound=0, upperBound=3)
+    uni = RealsUniverse(cntReals, lowerBound=0, upperBound=30)
 
-    # Complex DNF formula with multiple constraints per clause
-    # Clause 1: x + 2y ≤ 4 AND x - y ≥ 0
-    # Clause 2: 2x + y ≤ 5 AND x + y ≥ 2
-    # Real variables are indexed starting from cntBools (0 in this case)
+    # DNF formula with explicit constraints defining the square [10,30] x [10,30]
     expr = [
         [
-            [(0, 1), (1, 2), ("<=", 4)],  # x + 2y ≤ 4
-            [(0, 1), (1, -1), (">=", 0)],  # x - y ≥ 0
-        ],
-        [
-            [(0, 2), (1, 1), ("<=", 5)],  # 2x + y ≤ 5
-            [(0, 1), (1, 1), (">=", 2)],  # x + y ≥ 2
-        ],
+            [(0, 1), (1, 0), (">=", 10)],  # x >= 10
+            [(0, 1), (1, 0), ("<=", 30)],  # x <= 30
+            [(0, 0), (1, 1), (">=", 10)],  # y >= 10
+            [(0, 0), (1, 1), ("<=", 30)],  # y <= 30
+        ]
     ]
 
-    # Complex polynomial weight function: x² + y² + xy + 1
-    # Represented as sum of monomials: 1*x^2*y^0 + 1*x^0*y^2 + 1*x^1*y^1 + 1*x^0*y^0
-    monomials = [
-        [1, [2, 0]],  # x²
-        [1, [0, 2]],  # y²
-        [1, [1, 1]],  # xy
-        [1, [0, 0]],  # 1 (constant)
-    ]
+    # Weight function: constant 1 (integrate over area)
+    monomials = [[1, [0, 0]]]  # 1 * x^0 * y^0 = 1
 
     poly_wf = WeightFunction(monomials, np.array([]))
 
     if verbose:
-        print("=== Advanced LattE Integration Example ===")
-        print(f"Real variables: {cntReals} (x, y ∈ [0, 3])")
+        print("=== Simple Square Integration Example ===")
+        print(f"Real variables: {cntReals} (x, y ∈ [0, 30])")
         print(f"Boolean variables: {cntBools}")
-        print(
-            f"DNF formula: (x + 2y ≤ 4 ∧ x - y ≥ 0) ∨ (2x + y ≤ 5 ∧ x + y ≥ 2)"
-        )
-        print(f"Weight function: x² + y² + xy + 1")
-        print(
-            f"Expected result: Complex integration over constrained polytopes"
-        )
+        print(f"DNF formula: x ≥ 10 ∧ x ≤ 30 ∧ y ≥ 10 ∧ y ≤ 30")
+        print(f"Weight function: 1 (constant)")
+        print(f"Expected result: (30-10) * (30-10) = 400")
         print(f"Parameters: eps={eps}, delta={delta}")
-        print()
-        print("WARNING: This example requires LattE integration tool!")
-        print("Install LattE in latte-distro/ folder or this will fail.")
         print()
 
     # Check if temp directory exists, create if not
@@ -110,17 +87,21 @@ def run_example(eps=0.2, delta=0.1, verbose=False):
         timestamp_end = time.time()
         execution_time = timestamp_end - timestamp_start
 
+        expected = 400.0
+        error = abs(result - expected)
+
         if verbose:
             print(f"Result: {result:.6f}")
             print(f"Execution time: {execution_time:.2f} seconds")
+            print(f"Error from expected ({expected}): {error:.6f}")
             print()
             print("SUCCESS: LattE integration completed!")
 
         return {
             "result": result,
-            "expected": None,  # Complex integration, no simple expected value
+            "expected": expected,
             "execution_time": execution_time,
-            "error": None,
+            "error": error,
             "success": True,
         }
 
@@ -149,7 +130,7 @@ def run_example(eps=0.2, delta=0.1, verbose=False):
 
         return {
             "result": None,
-            "expected": None,
+            "expected": 400.0,
             "execution_time": execution_time,
             "error": None,
             "success": False,
