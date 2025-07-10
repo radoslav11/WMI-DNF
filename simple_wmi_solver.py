@@ -1,6 +1,7 @@
 import numpy as np
-from utils.runLatte import integrate
-from utils.polytopeSampling import sample, chebyshev_center
+from utils.run_latte import integrate
+from utils.polytope_sampling import sample
+from utils.polytope_utils import find_interior_point_active_vars
 from tqdm import tqdm
 
 
@@ -14,46 +15,64 @@ class SimpleWMISolver:
         self.nbVariables = self.nbBools + self.nbReals
         self.weightFunction = weightFunction
 
-        self.clauseList = clauseList
-        self.nbClauses = len(clauseList)
+        # Normalize constraints to eliminate <= and < operators
+        self.clauseList = self.normalizeConstraints(clauseList)
+        self.nbClauses = len(self.clauseList)
 
         self.computeClauseWeights()
         self.generateClauseHrep()
+
+    def normalizeConstraints(self, clauseList):
+        """Keep constraints in original form for direct conversion to Ax <= b"""
+        return clauseList
 
     def generateHrep(self, clause):
         lines = []
         for atom in clause:
             if type(atom) == list:
-                sign = atom[-1][0][0]
-                if sign == "!":
+                operator = atom[-1][0]
+                constant = atom[-1][1]
+                if operator == "!":
                     continue
 
-                if sign == ">":
-                    atom = [(x, -y) for x, y in atom]
-                elif sign == "<":
-                    # For <= constraints, negate variable coefficients to convert to >= form
-                    # x <= 2 becomes -x >= -2, or 2 - x >= 0
-                    atom = [(x, -y) for x, y in atom[:-1]] + [
-                        (atom[-1][0], atom[-1][1])
-                    ]
-
+                # Build constraint vector for Ax <= b format
                 vec = [0] * (1 + self.nbReals)
-                vec[0] = atom[-1][1]
-                for i, v in atom[:-1]:
-                    vec[i - self.nbBools + 1] = v
+
+                if operator in [">=", ">"]:
+                    # ax + by >= c becomes -ax - by <= -c
+                    vec[0] = -constant  # -c (right-hand side)
+                    for i, v in atom[:-1]:
+                        vec[i - self.nbBools + 1] = (
+                            -v
+                        )  # -variable coefficients
+                elif operator in ["<=", "<"]:
+                    # ax + by <= c stays as ax + by <= c
+                    vec[0] = constant  # c (right-hand side)
+                    for i, v in atom[:-1]:
+                        vec[i - self.nbBools + 1] = v  # variable coefficients
+                elif operator == "=":
+                    # ax + by = c becomes two constraints
+                    # First: ax + by <= c
+                    vec[0] = constant
+                    for i, v in atom[:-1]:
+                        vec[i - self.nbBools + 1] = v
+                    lines.append(vec)
+                    # Second: -ax - by <= -c
+                    vec2 = [0] * (1 + self.nbReals)
+                    vec2[0] = -constant
+                    for i, v in atom[:-1]:
+                        vec2[i - self.nbBools + 1] = -v
+                    lines.append(vec2)
+                    continue
 
                 lines.append(vec)
-
-                if sign == "=":
-                    vec = [-x for x in vec]
-                    vec[0] *= -1
-                    lines.append(vec)
 
         universeConstraints = np.zeros(
             (self.universeReals.A.shape[0], self.universeReals.A.shape[1] + 1)
         )
-        universeConstraints[:, 1:] = self.universeReals.A
-        universeConstraints[:, 0] = self.universeReals.b
+        # Convert universe constraints from Ax >= b to Ax <= b format: -Ax <= -b
+        universeConstraints[:, 1:] = -self.universeReals.A
+        universeConstraints[:, 0] = -self.universeReals.b
 
         if lines == []:
             return universeConstraints
@@ -61,11 +80,27 @@ class SimpleWMISolver:
         return np.append(np.array(lines), universeConstraints, axis=0)
 
     def generateClauseHrep(self):
+        # Generate constraints in Ax <= b format for sampling
         self.hrep = [
             (A[:, 0], A[:, 1:])
             for A in [self.generateHrep(clause) for clause in self.clauseList]
         ]
-        self.lastSampled = [chebyshev_center(a, b) for b, a in self.hrep]
+        # Initialize lastSampled with interior points computed using LP for active variables
+        self.lastSampled = []
+        for clause in self.clauseList:
+            lraAtoms = list(filter(lambda x: type(x) == list, clause))
+            interior_point = find_interior_point_active_vars(
+                lraAtoms, self.nbReals, self.nbBools, self.universeReals
+            )
+            if interior_point is not None:
+                self.lastSampled.append(interior_point)
+            else:
+                # Fallback to center point if no interior point found
+                center_point = (
+                    self.universeReals.lowerBound
+                    + self.universeReals.upperBound
+                ) / 2.0
+                self.lastSampled.append(np.full(self.nbReals, center_point))
 
     def computeWeightOfClause(self, clause):
         boolLits = np.array(
@@ -146,12 +181,21 @@ class SimpleWMISolver:
                 if (lit < self.nbVariables) and not sol[lit]:
                     return False
 
-            elif (
-                type(lit) == list
-                and sum([sol[idx] * coef for idx, coef in lit[:-1]])
-                > lit[-1][1]
-            ):
-                return False
+            elif type(lit) == list:
+                # Check original constraint format
+                operator = lit[-1][0]
+                constant = lit[-1][1]
+                var_sum = sum([sol[idx] * coef for idx, coef in lit[:-1]])
+
+                if operator in [">=", ">"]:
+                    if var_sum < constant:
+                        return False
+                elif operator in ["<=", "<"]:
+                    if var_sum > constant:
+                        return False
+                elif operator == "=":
+                    if abs(var_sum - constant) > 1e-9:
+                        return False
 
         return True
 
@@ -178,7 +222,7 @@ class SimpleWMISolver:
         numberSuccesses = 0
         point = None
 
-        for _ in tqdm(range(T), desc="WMI Sampling", unit="samples"):
+        for i in tqdm(range(T), desc="WMI Sampling", unit="samples"):
             if point is None:
                 clauseIdx = np.random.choice(
                     self.nbClauses, p=self.clauseProbs
@@ -192,7 +236,10 @@ class SimpleWMISolver:
                 )
 
             checkClauseIdx = np.random.randint(self.nbClauses)
-            if self.checkClauseSAT(point, self.clauseList[checkClauseIdx]):
+            sat_result = self.checkClauseSAT(
+                point, self.clauseList[checkClauseIdx]
+            )
+            if sat_result:
                 numberSuccesses += 1
                 point = None
 

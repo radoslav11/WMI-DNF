@@ -1,6 +1,6 @@
-from SimpleWMISolver import SimpleWMISolver
-from utils.realsUniverse import RealsUniverse
-from utils.weightFunction import WeightFunction
+from simple_wmi_solver import SimpleWMISolver
+from utils.reals_universe import RealsUniverse
+from utils.weight_function import WeightFunction
 import numpy as np
 import sys, time
 

@@ -22,7 +22,7 @@ class RealsUniverse:
         ]
 
         self.b = ([self.lowerBound] * (self.nbReals)) + (
-            [self.upperBound] * (self.nbReals)
+            [-self.upperBound] * (self.nbReals)
         )
 
         self.strConstraints = [

@@ -15,14 +15,29 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from SimpleWMISolver import SimpleWMISolver
-from utils.realsUniverse import RealsUniverse
-from utils.weightFunction import WeightFunction
+from simple_wmi_solver import SimpleWMISolver
+from utils.reals_universe import RealsUniverse
+from utils.weight_function import WeightFunction
 import numpy as np
 import time
 
 
-def main():
+def run_example(eps=0.25, delta=0.15, verbose=False):
+    """
+    Run the linear weight function example.
+
+    Args:
+        eps: Approximation parameter (default: 0.25)
+        delta: Confidence parameter (default: 0.15)
+        verbose: Whether to print progress information (default: False)
+
+    Returns:
+        dict: Results containing:
+            - result: The computed WMI result
+            - expected: The expected result (2.0)
+            - execution_time: Time taken to run the example
+            - error: Absolute error from expected result
+    """
     np.random.seed(42)
 
     # Problem setup
@@ -42,18 +57,15 @@ def main():
 
     poly_wf = WeightFunction(monomials, np.array([]))
 
-    # Algorithm parameters
-    eps = 0.25
-    delta = 0.15
-
-    print("=== Linear Weight Function Example ===")
-    print(f"Real variables: {cntReals} (x ∈ [0, 10])")
-    print(f"Boolean variables: {cntBools}")
-    print(f"DNF formula: x ≤ 2")
-    print(f"Weight function: x")
-    print(f"Expected result: ∫[0,2] x dx = 2.0")
-    print(f"Parameters: eps={eps}, delta={delta}")
-    print()
+    if verbose:
+        print("=== Linear Weight Function Example ===")
+        print(f"Real variables: {cntReals} (x ∈ [0, 10])")
+        print(f"Boolean variables: {cntBools}")
+        print(f"DNF formula: x ≤ 2")
+        print(f"Weight function: x")
+        print(f"Expected result: ∫[0,2] x dx = 2.0")
+        print(f"Parameters: eps={eps}, delta={delta}")
+        print()
 
     timestamp_start = time.time()
 
@@ -64,9 +76,25 @@ def main():
     timestamp_end = time.time()
     execution_time = timestamp_end - timestamp_start
 
-    print(f"Result: {result:.6f}")
-    print(f"Execution time: {execution_time:.2f} seconds")
-    print(f"Error from expected (2.0): {abs(result - 2.0):.6f}")
+    expected = 2.0
+    error = abs(result - expected)
+
+    if verbose:
+        print(f"Result: {result:.6f}")
+        print(f"Execution time: {execution_time:.2f} seconds")
+        print(f"Error from expected ({expected}): {error:.6f}")
+
+    return {
+        "result": result,
+        "expected": expected,
+        "execution_time": execution_time,
+        "error": error,
+    }
+
+
+def main():
+    """Command-line interface for the example."""
+    run_example(verbose=True)
 
 
 if __name__ == "__main__":
