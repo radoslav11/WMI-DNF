@@ -184,69 +184,49 @@ class TestExamples(unittest.TestCase):
             eps=0.2, delta=0.1, verbose=False
         )
 
-        # This example might fail if LattE is not installed
-        if result["success"]:
-            self.assertIsNotNone(result["result"])
-            self.assertEqual(result["expected"], 400.0)
-            self.assertIsInstance(result["execution_time"], float)
-            self.assertGreater(result["execution_time"], 0)
-            self.assertIsInstance(result["error"], float)
+        self.assertTrue(result["success"])
+        self.assertIsNotNone(result["result"])
+        self.assertEqual(result["expected"], 400.0)
+        self.assertIsInstance(result["execution_time"], float)
+        self.assertGreater(result["execution_time"], 0)
+        self.assertIsInstance(result["error"], float)
 
-            # Check that result is within reasonable tolerance
-            self.assertLess(
-                result["error"],
-                200.0,
-                "Result should be within 200.0 of expected value",
-            )
-        else:
-            # LattE not available, check that we handled it gracefully
-            self.assertIsNone(result["result"])
-            self.assertEqual(result["expected"], 400.0)
-            self.assertIsNone(result["error"])
-            self.assertFalse(result["success"])
+        # Check that result is within reasonable tolerance
+        self.assertLess(
+            result["error"],
+            200.0,
+            "Result should be within 200.0 of expected value",
+        )
 
     def test_four_variables_mixed(self):
         """Test four variables mixed active/free example."""
         result = run_four_variables_mixed(eps=0.2, delta=0.1, verbose=False)
 
-        # This example might fail if LattE is not installed
-        if result["success"]:
-            self.assertIsNotNone(result["result"])
-            self.assertEqual(result["expected"], 2400.0)
-            self.assertIsInstance(result["execution_time"], float)
-            self.assertGreater(result["execution_time"], 0)
-            self.assertIsInstance(result["error"], float)
+        self.assertTrue(result["success"])
+        self.assertIsNotNone(result["result"])
+        self.assertEqual(result["expected"], 2400.0)
+        self.assertIsInstance(result["execution_time"], float)
+        self.assertGreater(result["execution_time"], 0)
+        self.assertIsInstance(result["error"], float)
 
-            # Check that result is within reasonable tolerance
-            self.assertLess(
-                result["error"],
-                1000.0,
-                "Result should be within 1000.0 of expected value",
-            )
+        # Check that result is within reasonable tolerance
+        self.assertLess(
+            result["error"],
+            1000.0,
+            "Result should be within 1000.0 of expected value",
+        )
 
-            # Check active/free variable separation
-            self.assertIsInstance(result["active_vars"], list)
-            self.assertIsInstance(result["free_vars"], list)
-            self.assertEqual(
-                result["active_vars"], [0, 1]
-            )  # x, y should be active
-            self.assertEqual(
-                result["free_vars"], [2, 3]
-            )  # z, w should be free
+        # Check active/free variable separation
+        self.assertIsInstance(result["active_vars"], list)
+        self.assertIsInstance(result["free_vars"], list)
+        self.assertEqual(
+            result["active_vars"], [0, 1]
+        )  # x, y should be active
+        self.assertEqual(result["free_vars"], [2, 3])  # z, w should be free
 
-            # Check interior point
-            self.assertIsInstance(result["interior_point"], list)
-            self.assertEqual(len(result["interior_point"]), 4)
-        else:
-            # LattE not available, check that we handled it gracefully
-            self.assertIsNone(result["result"])
-            self.assertEqual(result["expected"], 2400.0)
-            self.assertIsNone(result["error"])
-            self.assertFalse(result["success"])
-
-            # Active/free variables should still be computed
-            self.assertIsInstance(result["active_vars"], list)
-            self.assertIsInstance(result["free_vars"], list)
+        # Check interior point
+        self.assertIsInstance(result["interior_point"], list)
+        self.assertEqual(len(result["interior_point"]), 4)
 
 
 class TestExamplePerformance(unittest.TestCase):

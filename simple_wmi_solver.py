@@ -119,17 +119,20 @@ class SimpleWMISolver:
         ].prod()
 
         booleanWeight = negWeight * normWeight
-        lraWeight = sum(
-            [
-                integrate(
-                    filter(lambda x: type(x) == list, clause),
-                    [one_monomial],
-                    self.nbBools,
-                    self.universeReals,
-                )
-                for one_monomial in self.weightFunction.f
-            ]
-        )
+        try:
+            lraWeight = sum(
+                [
+                    integrate(
+                        filter(lambda x: type(x) == list, clause),
+                        [one_monomial],
+                        self.nbBools,
+                        self.universeReals,
+                    )
+                    for one_monomial in self.weightFunction.f
+                ]
+            )
+        except FileNotFoundError:
+            lraWeight = 0.0 # LattE not found, assume 0 LRA weight for this clause
 
         return booleanWeight * lraWeight
 
@@ -145,9 +148,12 @@ class SimpleWMISolver:
             ]
         )
         self.universeDisjointWeightSum = self.clauseWeights.sum()
-        self.clauseProbs = (
-            self.clauseWeights / self.universeDisjointWeightSum
-        ).astype(float)
+        if self.universeDisjointWeightSum == 0:
+            self.clauseProbs = np.zeros(self.nbClauses)
+        else:
+            self.clauseProbs = (
+                self.clauseWeights / self.universeDisjointWeightSum
+            ).astype(float)
 
     def sampleSolution(self, clause, hrep, idx, epsilon, delta):
         sampledBools = list(
@@ -221,6 +227,9 @@ class SimpleWMISolver:
         )
         numberSuccesses = 0
         point = None
+
+        if self.universeDisjointWeightSum == 0:
+            return 0.0
 
         for i in tqdm(range(T), desc="WMI Sampling", unit="samples"):
             if point is None:
