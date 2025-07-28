@@ -48,19 +48,20 @@ def _write_latte_input_file(
             # ax + by >= c becomes ax + by - c >= 0
             vec[0] = -constant
             for i, v in atom[:-1]:
-                vec[i - nbBools] = v * scaling_factor
+                vec[i - nbBools + 1] = v * scaling_factor
         elif operator in ["<=", "<"]:
             # ax + by <= c becomes -ax - by + c >= 0
             vec[0] = constant
             for i, v in atom[:-1]:
-                vec[i - nbBools] = -v * scaling_factor
+                vec[i - nbBools + 1] = -v * scaling_factor
         elif operator == "=":
             # For equality, we'll handle one direction here
             vec[0] = -constant
             for i, v in atom[:-1]:
-                vec[i - nbBools] = v * scaling_factor
+                vec[i - nbBools + 1] = v * scaling_factor
 
         lines.append(" ".join([str(int(x)) for x in vec]))
+
 
     original_lines = lines[:]
 
